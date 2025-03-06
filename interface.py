@@ -1,12 +1,10 @@
 import json
-import re
 import streamlit as st
 from Dev.Agent.syscore import Agent, ResearchAgent, StockResearchAgent, NewsRetrievalAgent, AnalysisAgent
 
 def agentFlow():
     # Research
     agent = ResearchAgent()
-    agent.human = ""
     stock_data = agent.interact()
 
     # Tickers Generation
@@ -16,53 +14,46 @@ def agentFlow():
 
     # News Retrieval Agent
     agent = NewsRetrievalAgent()
-    agent.human = f""
     news_data = agent.interact()
 
     # Analysis
     agent = AnalysisAgent()
-    agent.human = f"Create a Analysis report for this\n Top Stocks for the day {stock_data}\n News of the day {news_data}"
-    data = agent.chat_interact()
+    agent.human = f"Create an Analysis report for this\nTop Stocks for the day {stock_data}\nNews of the day {news_data}"
+    analysis_data = agent.chat_interact()
 
     # Compiler Agent
     llmagent = Agent()
     llmagent.human = f"""
-    Create a Usable JSON file from this for a UI
-    The structure should be
-
-        title: "top_indicies"
-        data: "< >"
-        news: "< >"
-
-    -----input data
+    Create a usable JSON file for a UI with the structure:
+    {{
+        "title": "top_indicies",
+        "data": "< >",
+        "news": "< >"
+    }}
+    NO COMMENTS
     indices = {stock_data}
     news = {news_data}
     """
     response = llmagent.chat_interact().content
-    # Extract JSON content between backticks
-    match = re.search(r'```(.*?)```', response, re.DOTALL)
-    if match:
-        json_data = match.group(1).strip()
-        try:
+
+    # Try to parse the response as JSON directly
+    try:
+        start_index = response.find('{')
+        end_index = response.rfind('}')
+        if start_index != -1 and end_index != -1:
+            json_data = response[start_index:end_index + 1]
             return json.loads(json_data)
-        except json.JSONDecodeError as e:
-            st.error(f"Error decoding JSON: {e}")
+        else:
+            st.error("No valid JSON structure found in the response.")
             return {}
-    else:
-        st.error("No JSON data found in the response.")
+    except json.JSONDecodeError as e:
+        st.error(f"Error decoding JSON: {e}")
         return {}
 
 def main():
     st.title('Stock Data and News Viewer')
-
-    # Retrieve the JSON data from the agent flow
-    data = agentFlow()
-
-    # Display the raw JSON data
-    st.subheader('Generated JSON Data')
-    st.json(data)
-
-    # Parse and display specific components
+    with st.spinner('Loading data... Please wait.'):
+        data = agentFlow()
     st.subheader('Top Indices')
     for index in data.get('data', []):
         st.write(f"- {index.get('index', 'Unknown')}")
@@ -74,6 +65,9 @@ def main():
         st.write(f"Source: {news.get('source', 'Unknown')} | Published: {news.get('published_at', 'N/A')}")
         if news.get('image_url'):
             st.image(news['image_url'])
+
+    st.subheader('Generated JSON Data')
+    st.json(data)
 
 if __name__ == '__main__':
     main()
