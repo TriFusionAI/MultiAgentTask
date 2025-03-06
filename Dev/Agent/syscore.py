@@ -7,6 +7,7 @@ import requests
 import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+import streamlit as st
 
 load_dotenv()
 
