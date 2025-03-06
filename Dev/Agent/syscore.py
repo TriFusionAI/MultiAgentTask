@@ -4,7 +4,11 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_groq import ChatGroq
 from langchain.tools import tool
 import requests
+import os
+from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+
+load_dotenv()
 
 @tool
 def research(input: Optional[str] = None) -> list[str]:
@@ -21,6 +25,27 @@ def research(input: Optional[str] = None) -> list[str]:
         if title:
             results.append(title.text)
     return results
+
+def fetchNews(symbol):
+    """Fetches news related to IBM stock."""
+    api_key = os.getenv('MKTX_API')
+    if not api_key:
+        raise ValueError("API key not found. Please set the 'MKTX_API' environment variable.")
+
+    url = 'https://api.marketaux.com/v1/news/all'
+    params = {
+        'api_token': api_key,
+        'symbols': f'{symbol}',
+        'limit': 5  # Number of articles to retrieve
+    }
+
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        news_data = response.json()
+        return news_data.get('data', [])
+    else:
+        raise Exception(f"Failed to fetch news: {response.status_code} - {response.text}")
+
 
 # Base Agent class
 class Agent:
@@ -51,6 +76,15 @@ class ResearchAgent(Agent):
         self.register_tool("research", research)
 
 # Instantiate and test the ResearchAgent
-agent = ResearchAgent()
-agent.human = "Show me the top stocks."
-agent.interact()
+# agent = ResearchAgent()
+# agent.human = "Show me the top stocks."
+# agent.interact()
+
+try:
+    news_articles = fetchNews('AAPL')
+    for article in news_articles:
+        print(f"Title: {article['title']}")
+        print(f"URL: {article['url']}")
+        print()
+except Exception as e:
+    print(e)
