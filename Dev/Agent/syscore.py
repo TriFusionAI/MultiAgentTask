@@ -7,7 +7,7 @@ import requests
 import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
-import streamlit as st
+# import streamlit as st
 
 load_dotenv()
 
@@ -33,9 +33,14 @@ def fetchNews(symbol):
     if not api_key:
         raise ValueError("API key not found. Please set the 'MKTX_API' environment variable.")
 
-    url = f'https://api.marketaux.com/v1/news/all?countries=us&filter_entities=true&limit=10&published_after=2025-03-05T05:27&api_token={api_key}'
+    url = "https://api.marketaux.com/v1/news/all"
+    params = {
+        "api_token": f"{api_key}",
+        "symbols": f"{symbol}",
+        "filter_entities": "true"
+    }
+    response = requests.get(url, params=params)
 
-    response = requests.get(url)
     if response.status_code == 200:
         news_data = response.json()
         return news_data.get('data', [])
@@ -70,6 +75,11 @@ class ResearchAgent(Agent):
         super().__init__()
         self.system = "You are an Agent designed to list the most available stocks using the research tool."
         self.register_tool("research", research)
+
+class NewsRetrievalAgent(Agent)
+    def __init_(self):
+        super().__init__()
+        self.system
 
 # Instantiate and test the ResearchAgent
 # agent = ResearchAgent()
