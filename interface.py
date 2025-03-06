@@ -10,6 +10,7 @@ def agentFlow():
     # Tickers Generation
     agent = StockResearchAgent()
     agent.human = f"{stock_data}"
+
     tickers = agent.chat_interact()
 
     # News Retrieval Agent
