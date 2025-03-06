@@ -32,14 +32,9 @@ def fetchNews(symbol):
     if not api_key:
         raise ValueError("API key not found. Please set the 'MKTX_API' environment variable.")
 
-    url = 'https://api.marketaux.com/v1/news/all'
-    params = {
-        'api_token': api_key,
-        'symbols': f'{symbol}',
-        'limit': 5  # Number of articles to retrieve
-    }
+    url = f'https://api.marketaux.com/v1/news/all?countries=us&filter_entities=true&limit=10&published_after=2025-03-05T05:27&api_token={api_key}'
 
-    response = requests.get(url, params=params)
+    response = requests.get(url)
     if response.status_code == 200:
         news_data = response.json()
         return news_data.get('data', [])
